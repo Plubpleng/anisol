@@ -15,16 +15,25 @@ const navigation = [
   { href: "/community", label: "คอมมูนิตี้" },
 ];
 
+// ใน components/site-header.tsx
+
 export async function SiteHeader() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  
+  // เรียกใช้ getUser พร้อมตรวจสอบ session ใหม่เสมอ
+  const { data: { user } } = await supabase.auth.getUser();
 
-  const displayName =
-    user?.user_metadata?.full_name ??
-    user?.email?.split("@")[0] ??
-    "สมาชิก";
+  // ดึงชื่อจากตาราง profiles แทนการดึงจาก user_metadata
+  // เพราะ user_metadata มักจะไม่อัปเดตทันที
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("display_name")
+    .eq("id", user?.id ?? "")
+    .single();
+
+  const displayName = profile?.display_name ?? user?.email?.split("@")[0] ?? "สมาชิก";
+
+  // ... ส่วนแสดงผลที่เหลือใช้ displayName ตัวนี้
 
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/85 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/85">

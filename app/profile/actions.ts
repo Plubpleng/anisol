@@ -105,7 +105,7 @@ export async function updateProfile(formData: FormData) {
     );
   }
 
-  revalidatePath("/");
+  revalidatePath("/", "layout");
   revalidatePath("/profile");
   revalidatePath("/community");
 
