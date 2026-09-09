@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   Eye,
   MessageCircle,
+  Heart,
   Send,
   ShieldAlert,
   Trash2,
@@ -11,7 +12,12 @@ import {
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { createClient } from "@/lib/supabase/server";
-import { createComment, deleteComment } from "../actions";
+import {
+  createComment,
+  deleteComment,
+  toggleThreadLike,
+} from "../actions";
+
 
 interface ThreadPageProps {
   params: Promise<{
@@ -30,52 +36,55 @@ export default async function ThreadPage({
   const query = await searchParams;
   const supabase = await createClient();
 
-  const [
-    { data: thread, error: threadError },
-    { data: comments, error: commentsError },
-    {
-      data: { user },
-    },
-  ] = await Promise.all([
-    supabase
-      .from("threads")
-      .select(`
-        id,
-        title,
-        body,
-        is_spoiler,
-        view_count,
-        created_at,
-        author:profiles!threads_author_id_fkey (
-          display_name,
-          username,
-          avatar_url
-        )
-      `)
-      .eq("id", id)
-      .single(),
+const [
+  { data: thread, error: threadError },
+  { data: comments, error: commentsError },
+  {
+    data: { user },
+  },
+] = await Promise.all([
+  supabase
+    .from("threads")
+    .select(`
+      id,
+      title,
+      body,
+      is_spoiler,
+      view_count,
+      created_at,
+      author:profiles!threads_author_id_fkey (
+        display_name,
+        username,
+        avatar_url
+      ),
+      thread_likes (
+        user_id
+      )
+    `)
+    .eq("id", id)
+    .single(),
 
-    supabase
-      .from("comments")
-      .select(`
-        id,
-        author_id,
-        body,
-        is_spoiler,
-        created_at,
-        updated_at,
-        author:profiles!comments_author_id_fkey (
-          display_name,
-          username,
-          avatar_url
-        )
-      `)
-      .eq("thread_id", id)
-      .is("parent_id", null)
-      .order("created_at", { ascending: true }),
+  supabase
+    .from("comments")
+    .select(`
+      id,
+      author_id,
+      body,
+      is_spoiler,
+      created_at,
+      updated_at,
+      author:profiles!comments_author_id_fkey (
+        display_name,
+        username,
+        avatar_url
+      )
+    `)
+    .eq("thread_id", id)
+    .is("parent_id", null)
+    .order("created_at", { ascending: true }),
 
-    supabase.auth.getUser(),
-  ]);
+  supabase.auth.getUser(),
+]);
 
   if (threadError || !thread) {
     notFound();
@@ -88,6 +97,13 @@ export default async function ThreadPage({
   const author = Array.isArray(thread.author)
     ? thread.author[0]
     : thread.author;
+
+  const likeCount = thread.thread_likes?.length ?? 0;
+
+  const isLiked =
+  user != null &&
+  thread.thread_likes?.some((like) => like.user_id === user.id);
+
 
   return (
     <div className="min-h-screen bg-zinc-50 text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
@@ -146,6 +162,44 @@ export default async function ThreadPage({
           <div className="mt-8 whitespace-pre-wrap wrap-break-word border-t border-zinc-200 pt-8 text-base leading-8 text-zinc-700 dark:border-zinc-800 dark:text-zinc-300">
             {thread.body}
           </div>
+
+<div className="mt-8 flex items-center justify-between border-t border-zinc-200 pt-5 dark:border-zinc-800">
+  <span className="text-sm text-zinc-500">
+    ถูกใจ {likeCount.toLocaleString("th-TH")} ครั้ง
+  </span>
+
+  {user ? (
+    <form action={toggleThreadLike}>
+      <input type="hidden" name="threadId" value={thread.id} />
+
+      <button
+        type="submit"
+        aria-pressed={isLiked}
+        className={
+          isLiked
+            ? "inline-flex h-10 items-center gap-2 rounded-xl bg-rose-50 px-4 text-sm font-semibold text-rose-600 transition hover:bg-rose-100 dark:bg-rose-950/40 dark:text-rose-400"
+            : "inline-flex h-10 items-center gap-2 rounded-xl border border-zinc-300 px-4 text-sm font-semibold text-zinc-600 transition hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-rose-950/40"
+        }
+      >
+        <Heart
+          className={`size-4 ${isLiked ? "fill-current" : ""}`}
+        />
+        {isLiked ? "ถูกใจแล้ว" : "ถูกใจ"}
+      </button>
+    </form>
+  ) : (
+    <Link
+      href={`/login?message=${encodeURIComponent(
+        "เข้าสู่ระบบเพื่อกดถูกใจ",
+      )}`}
+      className="inline-flex h-10 items-center gap-2 rounded-xl border border-zinc-300 px-4 text-sm font-semibold text-zinc-600 transition hover:border-rose-300 hover:text-rose-600 dark:border-zinc-700 dark:text-zinc-300"
+    >
+      <Heart className="size-4" />
+      เข้าสู่ระบบเพื่อถูกใจ
+    </Link>
+  )}
+</div>
+
         </article>
 
         <section id="comments" className="mt-8 scroll-mt-24">

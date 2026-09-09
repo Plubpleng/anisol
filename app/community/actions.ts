@@ -146,3 +146,79 @@ export async function deleteComment(formData: FormData) {
   revalidatePath("/community");
   redirect(`/community/${threadId}#comments`);
 }
+
+export async function toggleThreadLike(formData: FormData) {
+  const threadId = String(formData.get("threadId") ?? "");
+
+  if (!threadId) {
+    redirect("/community");
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(
+      `/login?error=${encodeURIComponent(
+        "กรุณาเข้าสู่ระบบก่อนกดถูกใจ",
+      )}`,
+    );
+  }
+
+  const { data: existingLike, error: findError } = await supabase
+    .from("thread_likes")
+    .select("thread_id")
+    .eq("thread_id", threadId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (findError) {
+    console.error("Find thread like failed:", findError);
+
+    redirect(
+      `/community/${threadId}?error=${encodeURIComponent(
+        "ไม่สามารถตรวจสอบสถานะถูกใจได้",
+      )}`,
+    );
+  }
+
+  if (existingLike) {
+    const { error } = await supabase
+      .from("thread_likes")
+      .delete()
+      .eq("thread_id", threadId)
+      .eq("user_id", user.id);
+
+    if (error) {
+      console.error("Remove thread like failed:", error);
+
+      redirect(
+        `/community/${threadId}?error=${encodeURIComponent(
+          "ไม่สามารถยกเลิกถูกใจได้",
+        )}`,
+      );
+    }
+  } else {
+    const { error } = await supabase.from("thread_likes").insert({
+      thread_id: threadId,
+      user_id: user.id,
+    });
+
+    if (error) {
+      console.error("Add thread like failed:", error);
+
+      redirect(
+        `/community/${threadId}?error=${encodeURIComponent(
+          "ไม่สามารถกดถูกใจได้",
+        )}`,
+      );
+    }
+  }
+
+  revalidatePath(`/community/${threadId}`);
+  revalidatePath("/community");
+  redirect(`/community/${threadId}`);
+}
