@@ -50,3 +50,99 @@ export async function createThread(formData: FormData) {
   revalidatePath("/community");
   redirect(`/community/${data.id}`);
 }
+
+export async function createComment(formData: FormData) {
+  const threadId = String(formData.get("threadId") ?? "");
+  const body = String(formData.get("body") ?? "").trim();
+
+  if (!threadId) {
+    redirect("/community");
+  }
+
+  if (body.length < 1 || body.length > 5000) {
+    redirect(
+      `/community/${threadId}?error=${encodeURIComponent(
+        "ความคิดเห็นต้องมีความยาว 1–5,000 ตัวอักษร",
+      )}`,
+    );
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(
+      `/login?error=${encodeURIComponent(
+        "กรุณาเข้าสู่ระบบก่อนแสดงความคิดเห็น",
+      )}`,
+    );
+  }
+
+  const { error } = await supabase.from("comments").insert({
+    thread_id: threadId,
+    author_id: user.id,
+    body,
+  });
+
+  if (error) {
+    console.error("Create comment failed:", error);
+
+    redirect(
+      `/community/${threadId}?error=${encodeURIComponent(
+        "ไม่สามารถส่งความคิดเห็นได้ กรุณาลองใหม่",
+      )}`,
+    );
+  }
+
+  revalidatePath(`/community/${threadId}`);
+  revalidatePath("/community");
+  redirect(`/community/${threadId}#comments`);
+}
+
+export async function deleteComment(formData: FormData) {
+  const threadId = String(formData.get("threadId") ?? "");
+  const commentId = String(formData.get("commentId") ?? "");
+
+  if (!threadId || !commentId) {
+    redirect("/community");
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(
+      `/login?error=${encodeURIComponent(
+        "กรุณาเข้าสู่ระบบก่อนดำเนินการ",
+      )}`,
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("comments")
+    .delete()
+    .eq("id", commentId)
+    .eq("author_id", user.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    console.error("Delete comment failed:", error);
+
+    redirect(
+      `/community/${threadId}?error=${encodeURIComponent(
+        "ไม่สามารถลบความคิดเห็นนี้ได้",
+      )}`,
+    );
+  }
+
+  revalidatePath(`/community/${threadId}`);
+  revalidatePath("/community");
+  redirect(`/community/${threadId}#comments`);
+}
