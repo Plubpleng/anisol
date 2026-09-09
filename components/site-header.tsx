@@ -3,7 +3,6 @@ import {
   LogOut,
   MessageCircle,
   Search,
-  Sparkles,
   UserRound,
 } from "lucide-react";
 import { logout } from "@/app/auth/actions";
@@ -31,9 +30,6 @@ export async function SiteHeader() {
     <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/85 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/85">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span className="flex size-9 items-center justify-center rounded-xl bg-violet-600 text-white">
-            <Sparkles className="size-5" />
-          </span>
           <span className="text-xl font-black tracking-tight">
             Ani<span className="text-violet-600">SOL</span>
           </span>
