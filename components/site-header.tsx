@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { MessageCircle, Search, Sparkles, UserRound } from "lucide-react";
+import {
+  LogOut,
+  MessageCircle,
+  Search,
+  Sparkles,
+  UserRound,
+} from "lucide-react";
+import { logout } from "@/app/auth/actions";
+import { createClient } from "@/lib/supabase/server";
 
 const navigation = [
   { href: "/", label: "หน้าแรก" },
@@ -8,7 +16,17 @@ const navigation = [
   { href: "/community", label: "คอมมูนิตี้" },
 ];
 
-export function SiteHeader() {
+export async function SiteHeader() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const displayName =
+    user?.user_metadata?.full_name ??
+    user?.email?.split("@")[0] ??
+    "สมาชิก";
+
   return (
     <header className="sticky top-0 z-50 border-b border-zinc-200/80 bg-white/85 backdrop-blur-xl dark:border-zinc-800 dark:bg-zinc-950/85">
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-6 px-4 sm:px-6">
@@ -50,13 +68,37 @@ export function SiteHeader() {
             <MessageCircle className="size-5" />
           </Link>
 
-          <Link
-            href="/login"
-            className="flex items-center gap-2 rounded-xl bg-violet-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700"
-          >
-            <UserRound className="size-4" />
-            <span className="hidden sm:inline">เข้าสู่ระบบ</span>
-          </Link>
+          {user ? (
+            <>
+              <Link
+                href="/profile"
+                className="flex items-center gap-2 rounded-xl bg-violet-50 px-3 py-2.5 text-sm font-semibold text-violet-700 dark:bg-violet-950/50 dark:text-violet-300"
+              >
+                <UserRound className="size-4" />
+                <span className="hidden max-w-32 truncate sm:inline">
+                  {displayName}
+                </span>
+              </Link>
+
+              <form action={logout}>
+                <button
+                  type="submit"
+                  aria-label="ออกจากระบบ"
+                  className="rounded-xl p-2.5 text-zinc-500 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/40"
+                >
+                  <LogOut className="size-5" />
+                </button>
+              </form>
+            </>
+          ) : (
+            <Link
+              href="/login"
+              className="flex items-center gap-2 rounded-xl bg-violet-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-violet-700"
+            >
+              <UserRound className="size-4" />
+              <span className="hidden sm:inline">เข้าสู่ระบบ</span>
+            </Link>
+          )}
         </div>
       </div>
     </header>
