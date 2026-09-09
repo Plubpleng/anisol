@@ -222,3 +222,104 @@ export async function toggleThreadLike(formData: FormData) {
   revalidatePath("/community");
   redirect(`/community/${threadId}`);
 }
+
+export async function updateThread(formData: FormData) {
+  const threadId = String(formData.get("threadId") ?? "");
+  const title = String(formData.get("title") ?? "").trim();
+  const body = String(formData.get("body") ?? "").trim();
+  const isSpoiler = formData.get("isSpoiler") === "on";
+
+  if (!threadId) {
+    redirect("/community");
+  }
+
+  const editUrl = (error: string) =>
+    `/community/${threadId}/edit?error=${encodeURIComponent(error)}`;
+
+  if (title.length < 3 || title.length > 160) {
+    redirect(editUrl("หัวข้อต้องมีความยาว 3–160 ตัวอักษร"));
+  }
+
+  if (body.length < 1 || body.length > 10000) {
+    redirect(editUrl("เนื้อหาต้องมีความยาว 1–10,000 ตัวอักษร"));
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(
+      `/login?error=${encodeURIComponent(
+        "กรุณาเข้าสู่ระบบก่อนแก้ไขกระทู้",
+      )}`,
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("threads")
+    .update({
+      title,
+      body,
+      is_spoiler: isSpoiler,
+    })
+    .eq("id", threadId)
+    .eq("author_id", user.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    console.error("Update thread failed:", error);
+    redirect(editUrl("ไม่สามารถแก้ไขกระทู้นี้ได้"));
+  }
+
+  revalidatePath("/community");
+  revalidatePath(`/community/${threadId}`);
+  revalidatePath(`/community/${threadId}/edit`);
+  redirect(`/community/${threadId}`);
+}
+
+export async function deleteThread(formData: FormData) {
+  const threadId = String(formData.get("threadId") ?? "");
+
+  if (!threadId) {
+    redirect("/community");
+  }
+
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect(
+      `/login?error=${encodeURIComponent(
+        "กรุณาเข้าสู่ระบบก่อนลบกระทู้",
+      )}`,
+    );
+  }
+
+  const { data, error } = await supabase
+    .from("threads")
+    .delete()
+    .eq("id", threadId)
+    .eq("author_id", user.id)
+    .select("id")
+    .maybeSingle();
+
+  if (error || !data) {
+    console.error("Delete thread failed:", error);
+
+    redirect(
+      `/community/${threadId}?error=${encodeURIComponent(
+        "ไม่สามารถลบกระทู้นี้ได้",
+      )}`,
+    );
+  }
+
+  revalidatePath("/community");
+  redirect("/community");
+}

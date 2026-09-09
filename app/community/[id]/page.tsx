@@ -12,6 +12,7 @@ import {
 import { notFound } from "next/navigation";
 import { SiteHeader } from "@/components/site-header";
 import { createClient } from "@/lib/supabase/server";
+import { ThreadOwnerActions } from "@/components/thread-owner-actions";
 import {
   createComment,
   deleteComment,
@@ -47,6 +48,7 @@ const [
     .from("threads")
     .select(`
       id,
+      author_id,
       title,
       body,
       is_spoiler,
@@ -103,6 +105,8 @@ const [
   const isLiked =
   user != null &&
   thread.thread_likes?.some((like) => like.user_id === user.id);
+
+  const isThreadOwner = user?.id === thread.author_id;
 
 
   return (
@@ -163,7 +167,20 @@ const [
             {thread.body}
           </div>
 
-<div className="mt-8 flex items-center justify-between border-t border-zinc-200 pt-5 dark:border-zinc-800">
+          {isThreadOwner && (
+  <div className="mt-8 flex justify-end border-t border-zinc-200 pt-5 dark:border-zinc-800">
+    <ThreadOwnerActions threadId={thread.id} />
+  </div>
+)}
+
+
+<div
+  className={`mt-5 flex items-center justify-between pt-5 ${
+    isThreadOwner
+      ? ""
+      : "border-t border-zinc-200 dark:border-zinc-800"
+  }`}
+>
   <span className="text-sm text-zinc-500">
     ถูกใจ {likeCount.toLocaleString("th-TH")} ครั้ง
   </span>
