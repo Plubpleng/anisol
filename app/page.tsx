@@ -1,69 +1,124 @@
-import Image from "next/image";
+import Link from "next/link";
+import { ArrowRight, MessageCircle, Newspaper, Play } from "lucide-react";
+import { AnimeCard } from "@/components/anime-card";
+import { SiteHeader } from "@/components/site-header";
+import { getTrendingAnime } from "@/lib/anilist";
 
-export default function Home() {
+export default async function HomePage() {
+  const anime = await getTrendingAnime();
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+    <div className="min-h-screen bg-[#fafafa] text-zinc-950 dark:bg-zinc-950 dark:text-zinc-50">
+      <SiteHeader />
+
+      <main>
+        <section className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 sm:pt-12">
+          <div className="relative overflow-hidden rounded-3xl bg-zinc-950 px-6 py-12 text-white sm:px-12 sm:py-16">
+            <div className="absolute -right-20 -top-32 size-80 rounded-full bg-violet-600/40 blur-3xl" />
+            <div className="absolute -bottom-28 left-1/3 size-72 rounded-full bg-fuchsia-500/20 blur-3xl" />
+
+            <div className="relative max-w-2xl">
+              <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-xs font-medium text-violet-100">
+                <Play className="size-3.5 fill-current" />
+                คอมมูนิตี้สำหรับคนรักอนิเมะ
+              </div>
+
+              <h1 className="text-4xl font-black tracking-tight sm:text-6xl">
+                ค้นพบ พูดคุย
+                <span className="block text-violet-400">
+                  และสนุกไปด้วยกัน
+                </span>
+              </h1>
+
+              <p className="mt-5 max-w-xl text-sm leading-7 text-zinc-300 sm:text-base">
+                ติดตามอนิเมะมาใหม่ อ่านข่าวสาร และร่วมพูดคุยกับแฟนอนิเมะ
+                ในคอมมูนิตี้ AniSOL
+              </p>
+
+              <div className="mt-7 flex flex-wrap gap-3">
+                <Link
+                  href="/anime"
+                  className="inline-flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-3 text-sm font-semibold transition hover:bg-violet-500"
+                >
+                  สำรวจอนิเมะ
+                  <ArrowRight className="size-4" />
+                </Link>
+
+                <Link
+                  href="/community"
+                  className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-5 py-3 text-sm font-semibold transition hover:bg-white/15"
+                >
+                  <MessageCircle className="size-4" />
+                  เข้าร่วมพูดคุย
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mx-auto max-w-7xl px-4 pb-14 sm:px-6">
+          <div className="mb-6 flex items-end justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-violet-600">
+                กำลังเป็นกระแส
+              </p>
+              <h2 className="mt-1 text-2xl font-bold tracking-tight sm:text-3xl">
+                อนิเมะยอดนิยม
+              </h2>
+            </div>
+
+            <Link
+              href="/anime"
+              className="flex shrink-0 items-center gap-1 text-sm font-semibold text-zinc-600 hover:text-violet-600 dark:text-zinc-300"
             >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
+              ดูทั้งหมด
+              <ArrowRight className="size-4" />
+            </Link>
+          </div>
+
+          {anime.length > 0 ? (
+            <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+              {anime.map((item) => (
+                <AnimeCard key={item.id} anime={item} />
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-zinc-300 p-10 text-center text-sm text-zinc-500 dark:border-zinc-700">
+              ไม่สามารถโหลดข้อมูลอนิเมะได้ กรุณาลองใหม่ภายหลัง
+            </div>
+          )}
+        </section>
+
+        <section className="border-y border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900/40">
+          <div className="mx-auto grid max-w-7xl gap-4 px-4 py-12 sm:px-6 md:grid-cols-2">
+            <Link
+              href="/news"
+              className="group rounded-2xl border border-zinc-200 p-6 transition hover:border-violet-300 hover:shadow-sm dark:border-zinc-800"
             >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+              <Newspaper className="size-7 text-violet-600" />
+              <h2 className="mt-4 text-xl font-bold">ข่าวสารอนิเมะ</h2>
+              <p className="mt-2 text-sm leading-6 text-zinc-500">
+                ติดตามประกาศ ซีซันใหม่ ตัวอย่าง และข่าวสารล่าสุด
+              </p>
+            </Link>
+
+            <Link
+              href="/community"
+              className="group rounded-2xl border border-zinc-200 p-6 transition hover:border-violet-300 hover:shadow-sm dark:border-zinc-800"
+            >
+              <MessageCircle className="size-7 text-violet-600" />
+              <h2 className="mt-4 text-xl font-bold">คอมมูนิตี้</h2>
+              <p className="mt-2 text-sm leading-6 text-zinc-500">
+                ตั้งกระทู้ แสดงความคิดเห็น และแบ่งปันเรื่องโปรดของคุณ
+              </p>
+            </Link>
+          </div>
+        </section>
       </main>
+
+      <footer className="mx-auto max-w-7xl px-4 py-8 text-center text-sm text-zinc-500 sm:px-6">
+        © {new Date().getFullYear()} AniSOL — Anime Community
+      </footer>
     </div>
   );
 }
